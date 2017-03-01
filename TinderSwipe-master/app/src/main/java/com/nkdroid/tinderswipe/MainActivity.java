@@ -36,9 +36,10 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
     String term = "restaurant";
     double latitude = 33.80573;
     double longitude = -117.94514;
-    int radius = 3000;
-    int limitSearch = 40;
-    int offset = 0;
+    int radius = 40000;
+    int limitSearch = 5;
+    int offset = 40;
+    int count = 1;
 
     public static void removeBackground() {
 
@@ -59,11 +60,12 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
             @Override
             protected String doInBackground(Void... params) {
                 Yelp yelp = Yelp.getYelp(MainActivity.this);
-                String businessesList = yelp.search(term, latitude,longitude, radius, limitSearch, offset);
+                String businessesList = yelp.search(term, latitude,longitude, radius, limitSearch, offset);                
 
                 try {
                     JSONObject json = new JSONObject(businessesList);
                     JSONArray businesses = json.getJSONArray("businesses");
+                    //int total =
 
                     for(int i = 0; i< businesses.length();i++){
                         JSONObject restaurant = (JSONObject) businesses.get(i);
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
                         String restaurantCatergories = null;
                         JSONArray catergoriesJsonObject = (JSONArray)restaurant.get("categories");
                         List subList = new ArrayList();
+
                         for(int j =0;j<catergoriesJsonObject.length();j++){
                             JSONArray obj = (JSONArray)catergoriesJsonObject.get(j);
                             subList.add(obj.get(0).toString());
@@ -100,6 +103,19 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
                         String restaurantLongitude = coordinate.get("longitude").toString();
 
                         al.add(new Data(restaurantID,restaurantName, restaurantCatergories, restaurantImage_url,restaurantRating,restaurantPhone,restaurantAddress,restaurantLatitude,restaurantLongitude));
+
+                        //Get more restaurants once we run out
+                        if(i == businesses.length() - 1) {
+                            businessesList = yelp.search(term, latitude,longitude, radius, limitSearch, offset+limitSearch*count);
+                            json = new JSONObject(businessesList);
+                            JSONArray moreBusinesses = json.getJSONArray("businesses");
+                            businesses = moreBusinesses;
+                            count++;
+                            i = 0;
+                        }
+
+
+
                     }
                 }
                 catch (Exception e){
@@ -119,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
         myAppAdapter = new MyAppAdapter(al, MainActivity.this);
         flingContainer.setAdapter(myAppAdapter);
         flingContainer.setFlingListener(new SwipeFlingAdapterView.onFlingListener() {
+
             @Override
             public void removeFirstObjectInAdapter() {
 
@@ -180,8 +197,6 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
         public static FrameLayout background;
         public TextView DataText;
         public ImageView cardImage;
-
-
     }
 
     public class MyAppAdapter extends BaseAdapter {
@@ -246,4 +261,5 @@ public class MainActivity extends AppCompatActivity implements FlingCardListener
             return rowView;
         }
     }
+
 }
